@@ -8,10 +8,7 @@
  */
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using System.Net;
 using System.Net.Sockets;
 using System.IO;
@@ -69,11 +66,14 @@ namespace HammingTFTP
 		/// <param name="hostfilename">The file on the remote server.</param>
 		/// <param name="localfilename">The local file location to save to.
 		/// </param>
-		/// <param name="mode">Transfer in binary or ascii.</param>
+        /// <param name="err">Download in error test mode or clear</param>
 		/// <returns>True on success, false on error.</returns>
 		public bool GetFileFromServer(
-			string hostfilename, string localfilename, TransferMode mode)
+			string hostfilename, string localfilename, ErrorCheckMd err)
 		{
+            // Fix mode as binary
+            TransferMode mode = TransferMode.octet;
+
 			// Create a new socket and connect to the server.
 			this.sconnection = new Socket(
 				AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
@@ -173,8 +173,10 @@ namespace HammingTFTP
 
 			// Since client always implements read, first 2 bytes will always 
 			// be 01 00 (the OPCode of 1 in big endian network format).
-			packet[0] = (byte)0;
-			packet[1] = (byte)1;
+            UInt16 code = 1;
+            byte[] opcode = BitConverter.GetBytes(code);
+            if (BitConverter.IsLittleEndian) { Array.Reverse(opcode); }
+            Array.Copy(opcode, 0, packet, 0, 2);
 
 			// Copy bytes of the filename to packet.
 			int pos = 2;
@@ -278,4 +280,6 @@ namespace HammingTFTP
 	/// Represents the two possible transfer modes, binary and ascii.
 	/// </summary>
 	public enum TransferMode { netascii, octet }
+
+    public enum ErrorCheckMd { error, noerror }
 }
