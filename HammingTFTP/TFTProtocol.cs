@@ -154,8 +154,9 @@ namespace HammingTFTP
 		/// <param name="filename">The filename to request from the server.
 		/// </param>
 		/// <param name="mode">The transfer mode to use.</param>
+        /// <param name="erc">Generate unofficial opcode 2 packet to receive data errors</param>
 		/// <returns>The packet in byte form.</returns>
-		private byte[] GenerateRequestReadPacket(string filename, TransferMode mode)
+		private byte[] GenerateRequestReadPacket(string filename, TransferMode mode, ErrorCheckMd erc)
 		{
 			// Convert the filename to bytes.
 			byte[] fname = System.Text.Encoding.ASCII.GetBytes(filename);
@@ -171,9 +172,12 @@ namespace HammingTFTP
 			// Length of filename, length of mode field, plus 4 static bytes.
 			byte[] packet = new byte[fname.Length + moderep.Length + 4];
 
-			// Since client always implements read, first 2 bytes will always 
-			// be 01 00 (the OPCode of 1 in big endian network format).
+			// Generate an opcode 1 for normal read or an opcode 2 to do error
+            // laden code testing
             UInt16 code = 1;
+
+            if (erc == ErrorCheckMd.error) { code = 2; }
+
             byte[] opcode = BitConverter.GetBytes(code);
             if (BitConverter.IsLittleEndian) { Array.Reverse(opcode); }
             Array.Copy(opcode, 0, packet, 0, 2);
@@ -229,7 +233,7 @@ namespace HammingTFTP
 			lfile.Write(dpacket, 4, (dpacket.Length - 4));
 
 			// Make a 4 byte response packet, 
-			// with the first two bites being 0 and 5.
+			// with the first two bites being 0 and 4.
 			byte[] ack = new byte[4];
 			ack[0] = (byte)0;
 			ack[1] = (byte)4;
@@ -274,6 +278,31 @@ namespace HammingTFTP
 				"TFTPReader: Error Code " +
 				errcode.ToString() + ": " + errormsg);
 		}
+
+        /// <summary>
+        /// Generate a nack packet for unfixable corrupt block.
+        /// </summary>
+        /// <param name="block">The block number to nack</param>
+        /// <returns>The completed packet, ready for transmission</returns>
+        private byte[] GenerateNackPacket(int block)
+        {
+            // Create 4 byte packet
+            byte[] ret = new byte[4];
+            byte[] tmp;
+
+            // Set the first values to 06, a NACK
+            tmp = BitConverter.GetBytes((Int16)6);
+            if (BitConverter.IsLittleEndian) { Array.Reverse(tmp); }
+            Array.Copy(tmp, 0, ret, 0, 2);
+
+            // Now get the block info
+            tmp = BitConverter.GetBytes((Int16)block);
+            if (BitConverter.IsLittleEndian) { Array.Reverse(tmp); }
+            Array.Copy(tmp, 0, ret, 2, 2);
+
+            // Return the packet
+            return (ret);
+        }
 	}
 
 	/// <summary>
