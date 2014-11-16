@@ -11,6 +11,8 @@ using System;
 using System.Text;
 using System.Net;
 using System.Net.Sockets;
+using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 
 namespace HammingTFTP
@@ -82,7 +84,7 @@ namespace HammingTFTP
 			FileStream lfile = File.Open(localfilename, FileMode.Create);
 
 			// Create a request packet and send it.
-			byte[] packet = this.GenerateRequestReadPacket(hostfilename, mode);
+            byte[] packet = this.GenerateRequestReadPacket(hostfilename, mode, err);
 			this.sconnection.SendTo(packet, this.tftphost);
 
 			// Go into loop listening for response packets.
@@ -221,13 +223,28 @@ namespace HammingTFTP
 			if (BitConverter.IsLittleEndian) { Array.Reverse(bnum); }
 			int block = BitConverter.ToInt16(bnum, 0);
 
+            /* Not used in this mode
 			// If the program is in ascii mode, 
 			// zero out the lf+cr in the last two bytes.
 			if (mode == TransferMode.netascii)
 			{
 				dpacket[dpacket.Length - 1] = (byte)0;
 				dpacket[dpacket.Length - 2] = (byte)0;
-			}
+			}*/
+
+            // Unscramble the packet using the Hamming code. Send a nack if the packet
+            // is decoded unscuccessfully
+            if((dpacket = this.DecodePacket(dpacket)) == null)
+            {
+                // Generate a NACK packet
+                byte[] nak = this.GenerateNackPacket(block);
+
+                // Send NACK
+                this.sconnection.SendTo(nak, this.reccon);
+
+                // Return block code
+                return block;
+            }
 
 			// Write the bytes to the file.
 			lfile.Write(dpacket, 4, (dpacket.Length - 4));
@@ -302,6 +319,16 @@ namespace HammingTFTP
 
             // Return the packet
             return (ret);
+        }
+
+        /// <summary>
+        /// Decodes the packet using the Hamming code.
+        /// </summary>
+        /// <param name="encpack">The encoded packet</param>
+        /// <returns>The decoded packet or null on error</returns>
+        private byte[] DecodePacket(byte[] encpack)
+        {
+            return encpack;
         }
 	}
 
