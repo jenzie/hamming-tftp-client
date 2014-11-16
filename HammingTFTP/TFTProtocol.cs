@@ -234,7 +234,8 @@ namespace HammingTFTP
 
             // Unscramble the packet using the Hamming code. Send a nack if the packet
             // is decoded unscuccessfully
-            if((dpacket = this.DecodePacket(dpacket)) == null)
+            HammingDecoder dec = new HammingDecoder();
+            if((dpacket = dec.DecodePacket(dpacket)) == null)
             {
                 // Generate a NACK packet
                 byte[] nak = this.GenerateNackPacket(block);
@@ -318,48 +319,6 @@ namespace HammingTFTP
             Array.Copy(tmp, 0, ret, 2, 2);
 
             // Return the packet
-            return (ret);
-        }
-
-        /// <summary>
-        /// Decodes the packet using the Hamming code.
-        /// </summary>
-        /// <param name="encpack">The encoded packet</param>
-        /// <returns>The decoded packet or null on error</returns>
-        private byte[] DecodePacket(byte[] encpack)
-        {
-            // Attempt to decode the data without doing any error checking trial run
-            // Create bool array to hold good bits
-            List<bool> bits = new List<bool>();
-
-            // Read through the packet in 32 bit blocks
-            for (int i = 0; i < encpack.Length; i += 4)
-            {
-                // Get the 32 bit segment
-                byte[] segment = new byte[4];
-                Array.Copy(encpack, i, segment, 0, 4);
-
-                // Reverse the array
-                if (BitConverter.IsLittleEndian) { Array.Reverse(segment); }
-
-                // Copy all the bits except the check bits
-                BitArray b = new BitArray(segment);
-
-                // Loop though each bool
-                for (int z = 0; z < b.Length; z++)
-                {
-                    if (z != 0 && z != 1 && z != 3 && z != 7 && z != 15 && z != 31)
-                    {
-                        bits.Add(b.Get(z));
-                    }
-                }
-            }
-
-            // Convert the bool into bits into bytes and return
-            BitArray interm = new BitArray(bits.ToArray());
-            byte[] ret = new byte[(interm.Length - 1) / 8 + 1];
-            interm.CopyTo(ret, 0);
-
             return (ret);
         }
 	}
