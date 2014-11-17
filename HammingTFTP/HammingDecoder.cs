@@ -191,17 +191,9 @@ namespace HammingTFTP
             int count = 0;
 
             // Loop through every other bit between 0 and 30 and count the number of ones
-            for (int x = 0; x < (data.Length - 1); x++)
+            for (int x = 0; x < (data.Length - 1); x += 2)
             {
-                if (flipflag == true)
-                {
-                    if (data[x] == true) { onescount++; }
-                    flipflag = false;
-                }
-                else
-                {
-                    flipflag = true;
-                }
+                if (data[x] == true) { onescount++; }
             }
 
             // If there are an even number of ones, there are no errors
@@ -215,7 +207,7 @@ namespace HammingTFTP
             onescount = 0;
             count = 0;
             flipflag = true;
-            for (int x = 1; x <= (data.Length - 1); x++)
+            for (int x = 1; x < (data.Length - 1); x++)
             {
                 if (flipflag == true)
                 {
@@ -244,7 +236,7 @@ namespace HammingTFTP
             count = 0;
             flipflag = true;
 
-            for (int x = 3; x <= (data.Length - 1); x++)
+            for (int x = 3; x < (data.Length - 1); x++)
             {
                 if (flipflag == true)
                 {
@@ -272,7 +264,7 @@ namespace HammingTFTP
             onescount = 0;
             count = 0;
             flipflag = true;
-            for (int x = 7; x <= (data.Length - 1); x++)
+            for (int x = 7; x < (data.Length - 1); x++)
             {
                 if (flipflag == true)
                 {
@@ -300,7 +292,7 @@ namespace HammingTFTP
             onescount = 0;
             count = 0;
             flipflag = true;
-            for (int x = 15; x <= (data.Length - 1); x++)
+            for (int x = 15; x < (data.Length - 1); x++)
             {
                 if (flipflag == true)
                 {
