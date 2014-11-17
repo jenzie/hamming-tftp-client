@@ -97,12 +97,34 @@ namespace HammingTFTP
             bool[] after = new bool[26];
             bool[] check = new bool[6];
 
+            // Calculate parity bits
+            bool[] parity = this.CalculateParityBits(before);
+
+            // First check for a 32bit error, this is uncorrectable and
+            // needs to result in an exception and NAK packet
+            if (parity[5] != check[5]) { throw new Exception(); }
+
+            // Detect the errored bit and repair
+            int ebit = 0;
+
+            if (parity[0] != check[0]) { ebit += 1; }
+            if (parity[1] != check[1]) { ebit += 2; }
+            if (parity[2] != check[2]) { ebit += 4; }
+            if (parity[3] != check[3]) { ebit += 8; }
+            if (parity[4] != check[4]) { ebit += 16; }
+
+            // Flip the bad bit
+            if(ebit != 0)
+            {
+                if (before[ebit] == true) { before[ebit] = false; } else { before[ebit] = true; }
+            }
+
             // Remove 1, 2, 4, 8, 16, and 32
             int pos = 0;
             int cpos = 0;
-            for(int z = 0; z < 32; z++)
+            for (int z = 0; z < 32; z++)
             {
-                if(z != 0 && z != 1 && z != 3 && z != 7 && z != 15 && z != 31)
+                if (z != 0 && z != 1 && z != 3 && z != 7 && z != 15 && z != 31)
                 {
                     after[pos] = before[z];
                     pos++;
@@ -113,11 +135,6 @@ namespace HammingTFTP
                     cpos++;
                 }
             }
-
-            // Calculate parity bits
-            bool[] parity = this.CalculateParityBits(before);
-
-            // First check for a 32bit error, this is un
 
             // Flip bits back again and return
             Array.Reverse(after);
