@@ -239,7 +239,7 @@ namespace HammingTFTP
             // Unscramble the packet using the Hamming code. Send a nack if the packet
             // is decoded unscuccessfully
             HammingDecoder dec = new HammingDecoder();
-            if((dpacket = dec.DecodePacket(payload)) == null)
+            if((payload = dec.DecodePacket(payload)) == null)
             {
                 // Generate a NACK packet
                 byte[] nak = this.GenerateNackPacket(block);
@@ -252,7 +252,7 @@ namespace HammingTFTP
             }
 
 			// Write the bytes to the file.
-			lfile.Write(dpacket, 4, (dpacket.Length - 4));
+			lfile.Write(payload, 0, payload.Length);
 
 			// Make a 4 byte response packet, 
 			// with the first two bites being 0 and 4.

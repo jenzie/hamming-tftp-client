@@ -29,13 +29,14 @@ namespace HammingTFTP
                 // Brake the bytes off and reverse byte order
                 byte[] block = new byte[4];
                 Array.Copy(datapayload, i, block, 0, 4);
-                if (BitConverter.IsLittleEndian) { Array.Reverse(block); }
 
-                // Convert bytes into bitarray
+                // Convert bytes into bitarray then to bool array
                 BitArray handler = new BitArray(block);
+                bool[] data = new bool[handler.Length];
+                handler.CopyTo(data, 0);
 
                 // Strip out check bits
-                BitArray results = this.HandleCheckSumBits(handler);
+                bool[] results = this.HandleCheckSumBits(data);
 
                 // Build big bit array
                 List<bool> databits = new List<bool>();
@@ -51,9 +52,7 @@ namespace HammingTFTP
                 }
 
                 // Copy the databits
-                bool[] tmp = new bool[(results.Length)];
-                results.CopyTo(tmp, 0);
-                foreach (bool bit in tmp) { databits.Add(bit); }
+                foreach (bool bit in results) { databits.Add(bit); }
 
                 List<bool> bytecreate = new List<bool>();
                 for(int x = 0; x < databits.Count; x++)
@@ -64,7 +63,9 @@ namespace HammingTFTP
                     // If count is 8, create byte
                     if(bytecreate.Count == 8)
                     {
-                        BitArray tobyte = new BitArray(bytecreate.ToArray());
+                        bool[] flip = bytecreate.ToArray();
+                        //Array.Reverse(flip);
+                        BitArray tobyte = new BitArray(flip);
                         byte[] target = new byte[1];
                         tobyte.CopyTo(target, 0);
 
@@ -80,7 +81,8 @@ namespace HammingTFTP
                 leftoverbits = bytecreate.ToArray();
             }
 
-            return datapayload;
+            // Return decoded bytes
+            return ret.ToArray();
         }
 
         
@@ -89,19 +91,11 @@ namespace HammingTFTP
         /// </summary>
         /// <param name="bits">The input bits</param>
         /// <returns>The bits minus the check bits</returns>
-        private BitArray HandleCheckSumBits(BitArray bits)
+        private bool[] HandleCheckSumBits(bool[] before)
         {
             // Currently just strips out the check bits
             // will fix one bit errors soon
-
-            bool[] before = new bool[32];
             bool[] after = new bool[26];
-
-            // Convert bits into bool array
-            bits.CopyTo(before, 0);
-
-            // We are in small endianess so flip the array for bit removal
-            Array.Reverse(before);
 
             // Remove 1, 2, 4, 8, 16, and 32
             int pos = 0;
@@ -116,7 +110,7 @@ namespace HammingTFTP
 
             // Flip bits back again and return
             Array.Reverse(after);
-            return (new BitArray(after));
+            return (after);
         }
     }
 }
