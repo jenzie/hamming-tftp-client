@@ -117,6 +117,8 @@ namespace HammingTFTP
             // Calculate parity bits
             bool[] parity = this.CalculateParityBits(before);
 
+            // First check for a 32bit error, this is un
+
             // Flip bits back again and return
             Array.Reverse(after);
             return (after);
@@ -140,7 +142,10 @@ namespace HammingTFTP
             {
                 if(flipflag == true)
                 {
-                    if (data[x] == true) { numones++; }
+                    if (x != 0 && x != 1 && x != 3 && x != 7 && x != 15)
+                    {
+                        if (data[x] == true) { numones++; }
+                    }
                     flipflag = false;
                 }
                 else
@@ -151,11 +156,11 @@ namespace HammingTFTP
             
             if(numones % 2 != 0)
             {
-                parity[0] = false;
+                parity[0] = true;
             }
             else
             {
-                parity[0] = true;
+                parity[0] = false;
             }
 
             // Calculate the second parity bit, take two skip two
@@ -165,7 +170,10 @@ namespace HammingTFTP
             {
                 if(flipflag == true)
                 {
-                    if (data[x] == true) { numones++; }
+                    if (x != 0 && x != 1 && x != 3 && x != 7 && x != 15)
+                    {
+                        if (data[x] == true) { numones++; }
+                    }
                 }
 
                 count++;
@@ -179,11 +187,129 @@ namespace HammingTFTP
 
             if (numones % 2 != 0)
             {
-                parity[1] = false;
+                parity[1] = true;
             }
             else
             {
-                parity[1] = true;
+                parity[1] = false;
+            }
+
+            // Calculate the fourth parity bit, take four skip four
+            flipflag = true;
+            numones = 0;
+            count = 0;
+            for (int x = 3; x < 31; x++)
+            {
+                if (flipflag == true)
+                {
+                    if (x != 0 && x != 1 && x != 3 && x != 7 && x != 15)
+                    {
+                        if (data[x] == true) { numones++; }
+                    }
+                }
+
+                count++;
+
+                // If count is 2, flip
+                if (count == 4)
+                {
+                    if (flipflag == true) { flipflag = false; } else { flipflag = true; }
+                    count = 0;
+                }
+            }
+
+            if (numones % 2 != 0)
+            {
+                parity[2] = true;
+            }
+            else
+            {
+                parity[2] = false;
+            }
+
+            // Calculate the eighth parity bit, take eight skip eight
+            flipflag = true;
+            numones = 0;
+            count = 0;
+            for (int x = 7; x < 31; x++)
+            {
+                if (flipflag == true)
+                {
+                    if (x != 0 && x != 1 && x != 3 && x != 7 && x != 15)
+                    {
+                        if (data[x] == true) { numones++; }
+                    }
+                }
+
+                count++;
+
+                // If count is 8, flip
+                if (count == 8)
+                {
+                    if (flipflag == true) { flipflag = false; } else { flipflag = true; }
+                    count = 0;
+                }
+            }
+
+            if (numones % 2 != 0)
+            {
+                parity[3] = true;
+            }
+            else
+            {
+                parity[3] = false;
+            }
+
+            // Calculate the sixteenth parity bit, take 16 skip 16
+            flipflag = true;
+            numones = 0;
+            count = 0;
+            for (int x = 15; x < 31; x++)
+            {
+                if (flipflag == true)
+                {
+                    if (x != 0 && x != 1 && x != 3 && x != 7 && x != 15)
+                    {
+                        if (data[x] == true) { numones++; }
+                    }
+                }
+
+                count++;
+
+                // If count is 8, flip
+                if (count == 16)
+                {
+                    if (flipflag == true) { flipflag = false; } else { flipflag = true; }
+                    count = 0;
+                }
+            }
+
+            if (numones % 2 != 0)
+            {
+                parity[4] = true;
+            }
+            else
+            {
+                parity[4] = false;
+            }
+
+            // Calculate last bit which checks all bits
+            numones = 0;
+            for (int x = 0; x < 31; x++)
+            {
+                if(data[x] == true)
+                {
+                    numones++;
+                }
+            }
+
+            if (numones % 2 != 0)
+            {
+                parity[5] = true;
+            }
+            else
+            {
+                parity[5] = false;
             }
 
             // Return calculated bits
