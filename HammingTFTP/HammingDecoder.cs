@@ -93,12 +93,13 @@ namespace HammingTFTP
         /// <returns>The bits minus the check bits</returns>
         private bool[] HandleCheckSumBits(bool[] before)
         {
-            // Currently just strips out the check bits
-            // will fix one bit errors soon
+            // Remove check bits from data into seperate array
             bool[] after = new bool[26];
+            bool[] check = new bool[6];
 
             // Remove 1, 2, 4, 8, 16, and 32
             int pos = 0;
+            int cpos = 0;
             for(int z = 0; z < 32; z++)
             {
                 if(z != 0 && z != 1 && z != 3 && z != 7 && z != 15 && z != 31)
@@ -106,11 +107,87 @@ namespace HammingTFTP
                     after[pos] = before[z];
                     pos++;
                 }
+                else
+                {
+                    check[cpos] = before[z];
+                    cpos++;
+                }
             }
+
+            // Calculate parity bits
+            bool[] parity = this.CalculateParityBits(before);
 
             // Flip bits back again and return
             Array.Reverse(after);
             return (after);
+        }
+
+        /// <summary>
+        /// Takes the 32bit data block and calculate the expected even parity values.
+        /// </summary>
+        /// <param name="data">The data block</param>
+        /// <returns>The calculated parity bits</returns>
+        private bool[] CalculateParityBits(bool[] data)
+        {
+            // Parity bit array
+            bool[] parity = new bool[6];
+            int numones = 0;
+            int count = 0;
+            bool flipflag = true;
+
+            // Calculate first parity bit by checking every other bit
+            for(int x = 0; x < 31; x++)
+            {
+                if(flipflag == true)
+                {
+                    if (data[x] == true) { numones++; }
+                    flipflag = false;
+                }
+                else
+                {
+                    flipflag = true;
+                }
+            }
+            
+            if(numones % 2 != 0)
+            {
+                parity[0] = false;
+            }
+            else
+            {
+                parity[0] = true;
+            }
+
+            // Calculate the second parity bit, take two skip two
+            flipflag = true;
+            numones = 0;
+            for (int x = 1; x < 31; x++ )
+            {
+                if(flipflag == true)
+                {
+                    if (data[x] == true) { numones++; }
+                }
+
+                count++;
+
+                // If count is 2, flip
+                if (count == 2) {
+                    if (flipflag == true) { flipflag = false; } else { flipflag = true; }
+                    count = 0;
+                }
+            }
+
+            if (numones % 2 != 0)
+            {
+                parity[1] = false;
+            }
+            else
+            {
+                parity[1] = true;
+            }
+
+            // Return calculated bits
+            return parity;
         }
     }
 }
