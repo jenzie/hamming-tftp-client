@@ -37,7 +37,17 @@ namespace HammingTFTP
                 handler.CopyTo(data, 0);
 
                 // Strip out check bits
-                bool[] results = this.HandleCheckSumBits(data);
+                bool[] results = null;
+                try
+                {
+                    results = this.HandleCheckSumBits(data);
+                }
+                catch(Exception)
+                {
+                    // Exception here means invalid data packet.
+                    // Send a NAK
+                    return null;
+                }
 
                 // Build big bit array
                 List<bool> databits = new List<bool>();
@@ -120,16 +130,16 @@ namespace HammingTFTP
 
             // First check for a 32bit error, this is uncorrectable and
             // needs to result in an exception and NAK packet
-            if (parity[5] != check[5]) { throw new Exception(); }
+            if (parity[5] != true) { throw new Exception(); }
 
             // Detect the errored bit and repair
             int ebit = 0;
 
-            if (parity[0] != check[0]) { ebit += 1; }
-            if (parity[1] != check[1]) { ebit += 2; }
-            if (parity[2] != check[2]) { ebit += 4; }
-            if (parity[3] != check[3]) { ebit += 8; }
-            if (parity[4] != check[4]) { ebit += 16; }
+            if (parity[0] != true) { ebit += 1; }
+            if (parity[1] != true) { ebit += 2; }
+            if (parity[2] != true) { ebit += 4; }
+            if (parity[3] != true) { ebit += 8; }
+            if (parity[4] != true) { ebit += 16; }
 
             // Flip the bad bit
             if(ebit != 0)
@@ -167,21 +177,18 @@ namespace HammingTFTP
         /// <returns>The calculated parity bits</returns>
         private bool[] CalculateParityBits(bool[] data)
         {
-            // Parity bit array
+            // Function persistant variables
             bool[] parity = new bool[6];
-            int numones = 0;
-            int count = 0;
             bool flipflag = true;
+            int onescount = 0;
+            int count = 0;
 
-            // Calculate first parity bit by checking every other bit
-            for(int x = 0; x <= 31; x++)
+            // Loop through every other bit between 0 and 30 and count the number of ones
+            for (int x = 0; x <= 30; x++)
             {
-                if(flipflag == true)
+                if (flipflag == true)
                 {
-                    if (x != 0 && x != 1 && x != 3 && x != 7 && x != 15)
-                    {
-                        if (data[x] == true) { numones++; }
-                    }
+                    if (data[x] == true) { onescount++; }
                     flipflag = false;
                 }
                 else
@@ -189,64 +196,57 @@ namespace HammingTFTP
                     flipflag = true;
                 }
             }
-            
-            if(numones % 2 != 0)
+
+            // If there are an even number of ones, there are no errors
+            if ((onescount % 2) == 0)
             {
                 parity[0] = true;
             }
-            else
-            {
-                parity[0] = false;
-            }
+            else { parity[0] = false; }
 
-            // Calculate the second parity bit, take two skip two
+            // Loop through every two bits between 1 and 30 and count the number of ones
+            onescount = 0;
+            count = 0;
             flipflag = true;
-            numones = 0;
-            for (int x = 1; x <= 31; x++ )
+            for (int x = 1; x <= 30; x++)
             {
-                if(flipflag == true)
+                if (flipflag == true)
                 {
-                    if (x != 0 && x != 1 && x != 3 && x != 7 && x != 15)
-                    {
-                        if (data[x] == true) { numones++; }
-                    }
+                    if (data[x] == true) { onescount++; }
                 }
 
                 count++;
 
-                // If count is 2, flip
-                if (count == 2) {
+                // Flip if counted off by two
+                if (count == 2)
+                {
                     if (flipflag == true) { flipflag = false; } else { flipflag = true; }
                     count = 0;
                 }
             }
 
-            if (numones % 2 != 0)
+            // If there are an even number of ones, there are no errors
+            if ((onescount % 2) == 0)
             {
                 parity[1] = true;
             }
-            else
-            {
-                parity[1] = false;
-            }
+            else { parity[1] = false; }
 
-            // Calculate the fourth parity bit, take four skip four
-            flipflag = true;
-            numones = 0;
+            // Loop through every four bits between 3 and 30 and count the number of ones
+            onescount = 0;
             count = 0;
-            for (int x = 3; x <= 31; x++)
+            flipflag = true;
+
+            for (int x = 3; x <= 30; x++)
             {
                 if (flipflag == true)
                 {
-                    if (x != 0 && x != 1 && x != 3 && x != 7 && x != 15)
-                    {
-                        if (data[x] == true) { numones++; }
-                    }
+                    if (data[x] == true) { onescount++; }
                 }
 
                 count++;
 
-                // If count is 2, flip
+                // Flip if counted off by two
                 if (count == 4)
                 {
                     if (flipflag == true) { flipflag = false; } else { flipflag = true; }
@@ -254,32 +254,27 @@ namespace HammingTFTP
                 }
             }
 
-            if (numones % 2 != 0)
+            // If there are an even number of ones, there are no errors
+            if ((onescount % 2) == 0)
             {
                 parity[2] = true;
             }
-            else
-            {
-                parity[2] = false;
-            }
+            else { parity[2] = false; }
 
-            // Calculate the eighth parity bit, take eight skip eight
-            flipflag = true;
-            numones = 0;
+            // Loop through every 8 bits between 7 and 30 and count the number of ones
+            onescount = 0;
             count = 0;
-            for (int x = 7; x <= 31; x++)
+            flipflag = true;
+            for (int x = 7; x <= 30; x++)
             {
                 if (flipflag == true)
                 {
-                    if (x != 0 && x != 1 && x != 3 && x != 7 && x != 15)
-                    {
-                        if (data[x] == true) { numones++; }
-                    }
+                    if (data[x] == true) { onescount++; }
                 }
 
                 count++;
 
-                // If count is 8, flip
+                // Flip if counted off by two
                 if (count == 8)
                 {
                     if (flipflag == true) { flipflag = false; } else { flipflag = true; }
@@ -287,32 +282,27 @@ namespace HammingTFTP
                 }
             }
 
-            if (numones % 2 != 0)
+            // If there are an even number of ones, there are no errors
+            if ((onescount % 2) == 0)
             {
                 parity[3] = true;
             }
-            else
-            {
-                parity[3] = false;
-            }
+            else { parity[3] = false; }
 
-            // Calculate the sixteenth parity bit, take 16 skip 16
-            flipflag = true;
-            numones = 0;
+            // Loop through every 16 bits between 15 and 30 and count the number of ones
+            onescount = 0;
             count = 0;
-            for (int x = 15; x <= 31; x++)
+            flipflag = true;
+            for (int x = 15; x <= 30; x++)
             {
                 if (flipflag == true)
                 {
-                    if (x != 0 && x != 1 && x != 3 && x != 7 && x != 15)
-                    {
-                        if (data[x] == true) { numones++; }
-                    }
+                    if (data[x] == true) { onescount++; }
                 }
 
                 count++;
 
-                // If count is 8, flip
+                // Flip if counted off by two
                 if (count == 16)
                 {
                     if (flipflag == true) { flipflag = false; } else { flipflag = true; }
@@ -320,36 +310,49 @@ namespace HammingTFTP
                 }
             }
 
-            if (numones % 2 != 0)
+            // If there are an even number of ones, there are no errors
+            if ((onescount % 2) == 0)
             {
                 parity[4] = true;
             }
-            else
-            {
-                parity[4] = false;
-            }
+            else { parity[4] = false; }
 
-            // Calculate last bit which checks all bits
-            numones = 0;
-            for (int x = 0; x < 31; x++)
+            // Check every bit in the block for the last one
+            onescount = 0;
+            for (int x = 0; x < 32; x++)
             {
                 if(data[x] == true)
                 {
-                    numones++;
+                    onescount++;
                 }
             }
 
-            if (numones % 2 != 0)
+            // If there are an even number of ones, there are no errors
+            if ((onescount % 2) == 0)
             {
                 parity[5] = true;
             }
-            else
-            {
-                parity[5] = false;
-            }
+            else { parity[5] = false; }
 
             // Return calculated bits
             return parity;
+        }
+
+        /// <summary>
+        /// Convert bit array to string representation for debugging purposes
+        /// </summary>
+        /// <param name="bits">the bits</param>
+        /// <returns>the string</returns>
+        private string BitsToStringDebug(bool[] bits)
+        {
+            string ret = "";
+
+            foreach(bool bit in bits)
+            {
+                if (bit == true) { ret = ret + "1 "; } else { ret = ret + "0 "; }
+            }
+
+            return ret;
         }
     }
 }
