@@ -26,6 +26,7 @@ namespace HammingTFTP
 		private IPEndPoint tftphost;
 		private Socket sconnection;
 		private EndPoint reccon;
+        private HammingDecoder dec;
 
 		/// <summary>
 		/// Validate and set the server details for the connection.
@@ -73,8 +74,10 @@ namespace HammingTFTP
 		public bool GetFileFromServer(
 			string hostfilename, string localfilename, ErrorCheckMd err)
 		{
-            // Fix mode as binary
+            // Fix mode as binary and set hamming mode decoder
             TransferMode mode = TransferMode.octet;
+            this.dec = new HammingDecoder();
+            this.dec.em = err;
 
 			// Create a new socket and connect to the server.
 			this.sconnection = new Socket(
@@ -238,7 +241,6 @@ namespace HammingTFTP
 
             // Unscramble the packet using the Hamming code. Send a nack if the packet
             // is decoded unscuccessfully
-            HammingDecoder dec = new HammingDecoder();
             if((payload = dec.DecodePacket(payload)) == null)
             {
                 // Generate a NACK packet

@@ -12,6 +12,8 @@ namespace HammingTFTP
     /// </summary>
     class HammingDecoder
     {
+        public ErrorCheckMd em = ErrorCheckMd.noerror;
+
         int blockcount = 0;
         /// <summary>
         /// Decodes the data payload of a single packet.
@@ -128,23 +130,28 @@ namespace HammingTFTP
             // Calculate parity bits
             bool[] parity = this.CalculateParityBits(before);
 
-            // First check for a 32bit error, this is uncorrectable and
-            // needs to result in an exception and NAK packet
-            if (parity[5] != true) { throw new Exception(); }
-
-            // Detect the errored bit and repair
-            int ebit = 0;
-
-            if (parity[0] != true) { ebit += 1; }
-            if (parity[1] != true) { ebit += 2; }
-            if (parity[2] != true) { ebit += 4; }
-            if (parity[3] != true) { ebit += 8; }
-            if (parity[4] != true) { ebit += 16; }
-
-            // Flip the bad bit
-            if(ebit != 0)
+            // This code has some odd inconsistancies, don't call in noerror
+            // mode
+            if (this.em != ErrorCheckMd.noerror)
             {
-                if (before[ebit] == true) { before[ebit] = false; } else { before[ebit] = true; }
+                // First check for a 32bit error, this is uncorrectable and
+                // needs to result in an exception and NAK packet
+                if (parity[5] != true) { throw new Exception(); }
+
+                // Detect the errored bit and repair
+                int ebit = 0;
+
+                if (parity[0] != true) { ebit += 1; }
+                if (parity[1] != true) { ebit += 2; }
+                if (parity[2] != true) { ebit += 4; }
+                if (parity[3] != true) { ebit += 8; }
+                if (parity[4] != true) { ebit += 16; }
+
+                // Flip the bad bit
+                if (ebit != 0)
+                {
+                    if (before[ebit] == true) { before[ebit] = false; } else { before[ebit] = true; }
+                }
             }
 
             // Remove 1, 2, 4, 8, 16, and 32
@@ -184,7 +191,7 @@ namespace HammingTFTP
             int count = 0;
 
             // Loop through every other bit between 0 and 30 and count the number of ones
-            for (int x = 0; x <= 30; x++)
+            for (int x = 0; x < (data.Length - 1); x++)
             {
                 if (flipflag == true)
                 {
@@ -208,7 +215,7 @@ namespace HammingTFTP
             onescount = 0;
             count = 0;
             flipflag = true;
-            for (int x = 1; x <= 30; x++)
+            for (int x = 1; x <= (data.Length - 1); x++)
             {
                 if (flipflag == true)
                 {
@@ -237,7 +244,7 @@ namespace HammingTFTP
             count = 0;
             flipflag = true;
 
-            for (int x = 3; x <= 30; x++)
+            for (int x = 3; x <= (data.Length - 1); x++)
             {
                 if (flipflag == true)
                 {
@@ -265,7 +272,7 @@ namespace HammingTFTP
             onescount = 0;
             count = 0;
             flipflag = true;
-            for (int x = 7; x <= 30; x++)
+            for (int x = 7; x <= (data.Length - 1); x++)
             {
                 if (flipflag == true)
                 {
@@ -293,7 +300,7 @@ namespace HammingTFTP
             onescount = 0;
             count = 0;
             flipflag = true;
-            for (int x = 15; x <= 30; x++)
+            for (int x = 15; x <= (data.Length - 1); x++)
             {
                 if (flipflag == true)
                 {
@@ -319,7 +326,7 @@ namespace HammingTFTP
 
             // Check every bit in the block for the last one
             onescount = 0;
-            for (int x = 0; x < 32; x++)
+            for (int x = 0; x < data.Length; x++)
             {
                 if(data[x] == true)
                 {
