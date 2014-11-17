@@ -132,7 +132,7 @@ namespace HammingTFTP
 
             // This code has some odd inconsistancies, don't call in noerror
             // mode
-            if (this.em != ErrorCheckMd.noerror)
+            if (this.em == ErrorCheckMd.error)
             {
                 // First check for a 32bit error, this is uncorrectable and
                 // needs to result in an exception and NAK packet
@@ -186,152 +186,132 @@ namespace HammingTFTP
         {
             // Function persistant variables
             bool[] parity = new bool[6];
-            bool flipflag = true;
-            int onescount = 0;
-            int count = 0;
+            bool[] checkarray;
+            int numones = 0;
 
-            // Loop through every other bit between 0 and 30 and count the number of ones
-            for (int x = 0; x < (data.Length - 1); x += 2)
-            {
-                if (data[x] == true) { onescount++; }
-            }
+            // Check the first bit, copy every other bit
+            checkarray = new bool[16];
+            checkarray[0] = data[0];
+            checkarray[1] = data[2];
+            checkarray[2] = data[4];
+            checkarray[3] = data[6];
+            checkarray[4] = data[8];
+            checkarray[5] = data[10];
+            checkarray[6] = data[12];
+            checkarray[7] = data[14];
+            checkarray[8] = data[16];
+            checkarray[9] = data[18];
+            checkarray[10] = data[20];
+            checkarray[11] = data[22];
+            checkarray[12] = data[24];
+            checkarray[13] = data[26];
+            checkarray[14] = data[28];
+            checkarray[15] = data[30];
 
-            // If there are an even number of ones, there are no errors
-            if ((onescount % 2) == 0)
-            {
-                parity[0] = true;
-            }
-            else { parity[0] = false; }
+            // Count up the number of ones and set check value
+            foreach (bool c in checkarray) { if (c == true) { numones++; } }
+            if ((numones % 2) == 0) { parity[0] = true; } else { parity[0] = false; }
 
-            // Loop through every two bits between 1 and 30 and count the number of ones
-            onescount = 0;
-            count = 0;
-            flipflag = true;
-            for (int x = 1; x < (data.Length - 1); x++)
-            {
-                if (flipflag == true)
-                {
-                    if (data[x] == true) { onescount++; }
-                }
+            // Check the second check bit
+            numones = 0;
+            checkarray = new bool[16];
+            checkarray[0] = data[1];
+            checkarray[1] = data[2];
+            checkarray[2] = data[5];
+            checkarray[3] = data[6];
+            checkarray[4] = data[9];
+            checkarray[5] = data[10];
+            checkarray[6] = data[13];
+            checkarray[7] = data[14];
+            checkarray[8] = data[17];
+            checkarray[9] = data[18];
+            checkarray[10] = data[21];
+            checkarray[11] = data[22];
+            checkarray[12] = data[25];
+            checkarray[13] = data[26];
+            checkarray[14] = data[29];
+            checkarray[15] = data[30];
 
-                count++;
+            // Count up the number of ones and set check value
+            foreach (bool c in checkarray) { if (c == true) { numones++; } }
+            if ((numones % 2) == 0) { parity[1] = true; } else { parity[1] = false; }
 
-                // Flip if counted off by two
-                if (count == 2)
-                {
-                    if (flipflag == true) { flipflag = false; } else { flipflag = true; }
-                    count = 0;
-                }
-            }
+            // Check the second check bit
+            numones = 0;
+            checkarray = new bool[16];
+            checkarray[0] = data[3];
+            checkarray[1] = data[4];
+            checkarray[2] = data[5];
+            checkarray[3] = data[6];
+            checkarray[4] = data[11];
+            checkarray[5] = data[12];
+            checkarray[6] = data[13];
+            checkarray[7] = data[14];
+            checkarray[8] = data[19];
+            checkarray[9] = data[20];
+            checkarray[10] = data[21];
+            checkarray[11] = data[22];
+            checkarray[12] = data[27];
+            checkarray[13] = data[28];
+            checkarray[14] = data[29];
+            checkarray[15] = data[30];
 
-            // If there are an even number of ones, there are no errors
-            if ((onescount % 2) == 0)
-            {
-                parity[1] = true;
-            }
-            else { parity[1] = false; }
+            // Count up the number of ones and set check value
+            foreach (bool c in checkarray) { if (c == true) { numones++; } }
+            if ((numones % 2) == 0) { parity[2] = true; } else { parity[2] = false; }
 
-            // Loop through every four bits between 3 and 30 and count the number of ones
-            onescount = 0;
-            count = 0;
-            flipflag = true;
+            // Check the second check bit
+            numones = 0;
+            checkarray = new bool[16];
+            checkarray[0] = data[7];
+            checkarray[1] = data[8];
+            checkarray[2] = data[9];
+            checkarray[3] = data[10];
+            checkarray[4] = data[11];
+            checkarray[5] = data[12];
+            checkarray[6] = data[13];
+            checkarray[7] = data[14];
+            checkarray[8] = data[23];
+            checkarray[9] = data[24];
+            checkarray[10] = data[25];
+            checkarray[11] = data[26];
+            checkarray[12] = data[27];
+            checkarray[13] = data[28];
+            checkarray[14] = data[29];
+            checkarray[15] = data[30];
 
-            for (int x = 3; x < (data.Length - 1); x++)
-            {
-                if (flipflag == true)
-                {
-                    if (data[x] == true) { onescount++; }
-                }
+            // Count up the number of ones and set check value
+            foreach (bool c in checkarray) { if (c == true) { numones++; } }
+            if ((numones % 2) == 0) { parity[3] = true; } else { parity[3] = false; }
 
-                count++;
+            // Check the second check bit
+            numones = 0;
+            checkarray = new bool[16];
+            checkarray[0] = data[15];
+            checkarray[1] = data[16];
+            checkarray[2] = data[17];
+            checkarray[3] = data[18];
+            checkarray[4] = data[19];
+            checkarray[5] = data[20];
+            checkarray[6] = data[21];
+            checkarray[7] = data[22];
+            checkarray[8] = data[23];
+            checkarray[9] = data[24];
+            checkarray[10] = data[25];
+            checkarray[11] = data[26];
+            checkarray[12] = data[27];
+            checkarray[13] = data[28];
+            checkarray[14] = data[29];
+            checkarray[15] = data[30];
 
-                // Flip if counted off by two
-                if (count == 4)
-                {
-                    if (flipflag == true) { flipflag = false; } else { flipflag = true; }
-                    count = 0;
-                }
-            }
+            // Count up the number of ones and set check value
+            foreach (bool c in checkarray) { if (c == true) { numones++; } }
+            if ((numones % 2) == 0) { parity[4] = true; } else { parity[4] = false; }
 
-            // If there are an even number of ones, there are no errors
-            if ((onescount % 2) == 0)
-            {
-                parity[2] = true;
-            }
-            else { parity[2] = false; }
-
-            // Loop through every 8 bits between 7 and 30 and count the number of ones
-            onescount = 0;
-            count = 0;
-            flipflag = true;
-            for (int x = 7; x < (data.Length - 1); x++)
-            {
-                if (flipflag == true)
-                {
-                    if (data[x] == true) { onescount++; }
-                }
-
-                count++;
-
-                // Flip if counted off by two
-                if (count == 8)
-                {
-                    if (flipflag == true) { flipflag = false; } else { flipflag = true; }
-                    count = 0;
-                }
-            }
-
-            // If there are an even number of ones, there are no errors
-            if ((onescount % 2) == 0)
-            {
-                parity[3] = true;
-            }
-            else { parity[3] = false; }
-
-            // Loop through every 16 bits between 15 and 30 and count the number of ones
-            onescount = 0;
-            count = 0;
-            flipflag = true;
-            for (int x = 15; x < (data.Length - 1); x++)
-            {
-                if (flipflag == true)
-                {
-                    if (data[x] == true) { onescount++; }
-                }
-
-                count++;
-
-                // Flip if counted off by two
-                if (count == 16)
-                {
-                    if (flipflag == true) { flipflag = false; } else { flipflag = true; }
-                    count = 0;
-                }
-            }
-
-            // If there are an even number of ones, there are no errors
-            if ((onescount % 2) == 0)
-            {
-                parity[4] = true;
-            }
-            else { parity[4] = false; }
-
-            // Check every bit in the block for the last one
-            onescount = 0;
-            for (int x = 0; x < data.Length; x++)
-            {
-                if(data[x] == true)
-                {
-                    onescount++;
-                }
-            }
-
-            // If there are an even number of ones, there are no errors
-            if ((onescount % 2) == 0)
-            {
-                parity[5] = true;
-            }
-            else { parity[5] = false; }
+            // Do total check
+            numones = 0;
+            foreach (bool c in data) { if (c == true) { numones++; } }
+            if ((numones % 2) == 0) { parity[5] = true; } else { parity[5] = false; }
 
             // Return calculated bits
             return parity;
