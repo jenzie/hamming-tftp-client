@@ -232,10 +232,14 @@ namespace HammingTFTP
 				dpacket[dpacket.Length - 2] = (byte)0;
 			}*/
 
+            // Remove first 4 bytes of packet to get just the payload
+            byte[] payload = new byte[(dpacket.Length - 4)];
+            Array.Copy(dpacket, 4, payload, 0, (dpacket.Length - 4));
+
             // Unscramble the packet using the Hamming code. Send a nack if the packet
             // is decoded unscuccessfully
             HammingDecoder dec = new HammingDecoder();
-            if((dpacket = dec.DecodePacket(dpacket)) == null)
+            if((dpacket = dec.DecodePacket(payload)) == null)
             {
                 // Generate a NACK packet
                 byte[] nak = this.GenerateNackPacket(block);
