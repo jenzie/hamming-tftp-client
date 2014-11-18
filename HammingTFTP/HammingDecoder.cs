@@ -141,30 +141,46 @@ namespace HammingTFTP
 
             // This code has some odd inconsistancies, don't call in noerror
             // mode.
-            if (this.em == ErrorCheckMd.error)
-            {
-                // First check for a 32bit error, this is uncorrectable and
+            //if (this.em == ErrorCheckMd.error)
+            //{
+                // First check for a 32-bit error, this is uncorrectable and
                 // needs to result in an exception and NAK packet.
-                if (parity[5] != true) { throw new Exception(); }
+                //if (parity[5] != true) { throw new Exception(); }
 
-                // Detect the errored bit and repair.
-                int ebit = 0;
+			
+			// Detect the errored bit and repair
+            int ebit = 0;
 
-                if (parity[0] != true) { ebit += 1; }
-                if (parity[1] != true) { ebit += 2; }
-                if (parity[2] != true) { ebit += 4; }
-                if (parity[3] != true) { ebit += 8; }
-                if (parity[4] != true) { ebit += 16; }
+            if (parity[0] != true) { ebit += 1; }
+            if (parity[1] != true) { ebit += 2; }
+            if (parity[2] != true) { ebit += 4; }
+            if (parity[3] != true) { ebit += 8; }
+            if (parity[4] != true) { ebit += 16; }
 
-                // Flip the bad bit.
-                if (ebit != 0)
-                {
-                    if (before[ebit] == true)
-						before[ebit] = false;
-					else
-						before[ebit] = true;
-                }
+            // Flip the bad bit.
+            if (ebit != 0)
+            {
+                if (before[(ebit - 1)] == true)
+					before[(ebit - 1)] = false;
+				else
+					before[(ebit - 1)] = true;
             }
+
+            // Check parity bits again to see if error is repaired.
+            // Detect the errored bit and repair.
+            parity = this.CalculateParityBits(before);
+            ebit = 0;
+
+            if (parity[0] != true) { ebit += 1; }
+            if (parity[1] != true) { ebit += 2; }
+            if (parity[2] != true) { ebit += 4; }
+            if (parity[3] != true) { ebit += 8; }
+            if (parity[4] != true) { ebit += 16; }
+
+            // First check for a 32-bit error, this is not correctable and
+            // needs to result in an exception and NAK packet.
+            if (parity[5] != true) { throw new Exception(); }
+            if (ebit != 0) { throw new Exception(); }
 
             // Remove 1, 2, 4, 8, 16, and 32.
             pos = 0;
@@ -190,7 +206,7 @@ namespace HammingTFTP
         }
 
         /// <summary>
-        /// Takes the 32-bit data block and calculate the expected 
+        /// Takes the 32-bit data block and calculates the expected 
 		/// even parity values.
         /// </summary>
         /// <param name="data">The data block.</param>
