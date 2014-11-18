@@ -1,4 +1,13 @@
-﻿using System;
+﻿/*
+ * Hamming TFTP Client
+ * author Jenny Zhen
+ * date: 11.02.14
+ * language: C#
+ * file: HammingDecoder.cs
+ * assignment: HammingTFTP
+ */
+
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,7 +17,7 @@ using System.Threading.Tasks;
 namespace HammingTFTP
 {
     /// <summary>
-    /// Decode packets encoded with 32bit Hamming check algorithm
+    /// Decode packets encoded with 32-bit hamming check algorithm.
     /// </summary>
     class HammingDecoder
     {
@@ -18,27 +27,27 @@ namespace HammingTFTP
         /// <summary>
         /// Decodes the data payload of a single packet.
         /// </summary>
-        /// <param name="datapayload">The data payload off the wire</param>
-        /// <returns>The decoded data contents</returns>
+        /// <param name="datapayload">The data payload off the wire.</param>
+        /// <returns>The decoded data contents.</returns>
         public byte[] DecodePacket(byte[] datapayload)
         {
-            // Holding variable for carried bits
+            // Holding variable for carried bits.
             bool[] leftoverbits = null;
             List<byte> ret = new List<byte>();
 
-            // Loop through each block of 32 bits
+            // Loop through each block of 32 bits.
             for(int i = 0; i < datapayload.Length; i+=4)
             {
-                // Brake the bytes off and reverse byte order
+                // Break the bytes off and reverse byte order.
                 byte[] block = new byte[4];
                 Array.Copy(datapayload, i, block, 0, 4);
 
-                // Convert bytes into bitarray then to bool array
+                // Convert bytes into bit array then to boolean array.
                 BitArray handler = new BitArray(block);
                 bool[] data = new bool[handler.Length];
                 handler.CopyTo(data, 0);
 
-                // Strip out check bits
+                // Strip out check bits.
                 bool[] results = null;
                 try
                 {
@@ -47,14 +56,14 @@ namespace HammingTFTP
                 catch(Exception)
                 {
                     // Exception here means invalid data packet.
-                    // Send a NAK
+                    // Send a NAK.
                     return null;
                 }
 
-                // Build big bit array
+                // Build big bit array.
                 List<bool> databits = new List<bool>();
 
-                // Copy any previous leftovers
+                // Copy any previous leftovers.
                 if(leftoverbits != null)
                 {
                     foreach(bool bit in leftoverbits)
@@ -64,16 +73,16 @@ namespace HammingTFTP
                     leftoverbits = null;
                 }
 
-                // Copy the databits
+                // Copy the databits.
                 foreach (bool bit in results) { databits.Add(bit); }
 
                 List<bool> bytecreate = new List<bool>();
                 for(int x = 0; x < databits.Count; x++)
                 {
-                    // Copy bit to bytecreate
+                    // Copy bit to bytecreate.
                     bytecreate.Add(databits[x]);
 
-                    // If count is 8, create byte
+                    // If count is 8, create byte.
                     if(bytecreate.Count == 8)
                     {
                         bool[] flip = bytecreate.ToArray();
@@ -82,35 +91,35 @@ namespace HammingTFTP
                         byte[] target = new byte[1];
                         tobyte.CopyTo(target, 0);
 
-                        // Add the new byte to output
+                        // Add the new byte to output.
                         ret.Add(target[0]);
 
-                        // Clear the bytecreate
+                        // Clear the bytecreate.
                         bytecreate.Clear();
                     }
                 }
 
-                // Copy the remaining bytecreate to leftovers
+                // Copy the remaining bytecreate to leftovers.
                 leftoverbits = bytecreate.ToArray();
             }
 
-            // Return decoded bytes
+            // Return decoded bytes.
             return ret.ToArray();
         }
 
         
         /// <summary>
-        /// Handles the checksum bits for the 32bit message block.
+        /// Handles the checksum bits for the 32-bit message block.
         /// </summary>
-        /// <param name="bits">The input bits</param>
-        /// <returns>The bits minus the check bits</returns>
+        /// <param name="bits">The input bits.</param>
+        /// <returns>The bits minus the check bits.</returns>
         private bool[] HandleCheckSumBits(bool[] before)
         {
-            // Remove check bits from data into seperate array
+            // Remove check bits from data into separate array.
             bool[] after = new bool[26];
             bool[] check = new bool[6];
 
-            // Remove 1, 2, 4, 8, 16, and 32
+            // Remove 1, 2, 4, 8, 16, and 32.
             int pos = 0;
             int cpos = 0;
             for (int z = 0; z < 32; z++)
@@ -127,18 +136,18 @@ namespace HammingTFTP
                 }
             }
 
-            // Calculate parity bits
+            // Calculate parity bits.
             bool[] parity = this.CalculateParityBits(before);
 
             // This code has some odd inconsistancies, don't call in noerror
-            // mode
+            // mode.
             if (this.em == ErrorCheckMd.error)
             {
                 // First check for a 32bit error, this is uncorrectable and
-                // needs to result in an exception and NAK packet
+                // needs to result in an exception and NAK packet.
                 if (parity[5] != true) { throw new Exception(); }
 
-                // Detect the errored bit and repair
+                // Detect the errored bit and repair.
                 int ebit = 0;
 
                 if (parity[0] != true) { ebit += 1; }
@@ -147,14 +156,17 @@ namespace HammingTFTP
                 if (parity[3] != true) { ebit += 8; }
                 if (parity[4] != true) { ebit += 16; }
 
-                // Flip the bad bit
+                // Flip the bad bit.
                 if (ebit != 0)
                 {
-                    if (before[ebit] == true) { before[ebit] = false; } else { before[ebit] = true; }
+                    if (before[ebit] == true)
+						before[ebit] = false;
+					else
+						before[ebit] = true;
                 }
             }
 
-            // Remove 1, 2, 4, 8, 16, and 32
+            // Remove 1, 2, 4, 8, 16, and 32.
             pos = 0;
             cpos = 0;
             for (int z = 0; z < 32; z++)
@@ -171,25 +183,26 @@ namespace HammingTFTP
                 }
             }
 
-            // Flip bits back again and return
+            // Flip bits back again and return.
             Array.Reverse(after);
             blockcount++;
             return (after);
         }
 
         /// <summary>
-        /// Takes the 32bit data block and calculate the expected even parity values.
+        /// Takes the 32-bit data block and calculate the expected 
+		/// even parity values.
         /// </summary>
-        /// <param name="data">The data block</param>
-        /// <returns>The calculated parity bits</returns>
+        /// <param name="data">The data block.</param>
+        /// <returns>The calculated parity bits.</returns>
         private bool[] CalculateParityBits(bool[] data)
         {
-            // Function persistant variables
+            // Function persistant variables.
             bool[] parity = new bool[6];
             bool[] checkarray;
             int numones = 0;
 
-            // Check the first bit, copy every other bit
+            // Check the first bit, copy every other bit.
             checkarray = new bool[16];
             checkarray[0] = data[0];
             checkarray[1] = data[2];
@@ -208,11 +221,14 @@ namespace HammingTFTP
             checkarray[14] = data[28];
             checkarray[15] = data[30];
 
-            // Count up the number of ones and set check value
+            // Count up the number of ones and set check value.
             foreach (bool c in checkarray) { if (c == true) { numones++; } }
-            if ((numones % 2) == 0) { parity[0] = true; } else { parity[0] = false; }
+            if ((numones % 2) == 0)
+				parity[0] = true;
+			else
+				parity[0] = false;
 
-            // Check the second check bit
+            // Check the second check bit.
             numones = 0;
             checkarray = new bool[16];
             checkarray[0] = data[1];
@@ -232,11 +248,14 @@ namespace HammingTFTP
             checkarray[14] = data[29];
             checkarray[15] = data[30];
 
-            // Count up the number of ones and set check value
+            // Count up the number of ones and set check value.
             foreach (bool c in checkarray) { if (c == true) { numones++; } }
-            if ((numones % 2) == 0) { parity[1] = true; } else { parity[1] = false; }
+            if ((numones % 2) == 0)
+				parity[1] = true;
+			else
+				parity[1] = false;
 
-            // Check the second check bit
+            // Check the second check bit.
             numones = 0;
             checkarray = new bool[16];
             checkarray[0] = data[3];
@@ -256,11 +275,14 @@ namespace HammingTFTP
             checkarray[14] = data[29];
             checkarray[15] = data[30];
 
-            // Count up the number of ones and set check value
+            // Count up the number of ones and set check value.
             foreach (bool c in checkarray) { if (c == true) { numones++; } }
-            if ((numones % 2) == 0) { parity[2] = true; } else { parity[2] = false; }
+            if ((numones % 2) == 0)
+				parity[2] = true;
+			else
+				parity[2] = false;
 
-            // Check the second check bit
+            // Check the second check bit.
             numones = 0;
             checkarray = new bool[16];
             checkarray[0] = data[7];
@@ -280,11 +302,14 @@ namespace HammingTFTP
             checkarray[14] = data[29];
             checkarray[15] = data[30];
 
-            // Count up the number of ones and set check value
+            // Count up the number of ones and set check value.
             foreach (bool c in checkarray) { if (c == true) { numones++; } }
-            if ((numones % 2) == 0) { parity[3] = true; } else { parity[3] = false; }
+            if ((numones % 2) == 0)
+				parity[3] = true;
+			else
+				parity[3] = false;
 
-            // Check the second check bit
+            // Check the second check bit.
             numones = 0;
             checkarray = new bool[16];
             checkarray[0] = data[15];
@@ -304,31 +329,40 @@ namespace HammingTFTP
             checkarray[14] = data[29];
             checkarray[15] = data[30];
 
-            // Count up the number of ones and set check value
+            // Count up the number of ones and set check value.
             foreach (bool c in checkarray) { if (c == true) { numones++; } }
-            if ((numones % 2) == 0) { parity[4] = true; } else { parity[4] = false; }
+            if ((numones % 2) == 0)
+				parity[4] = true;
+			else
+				parity[4] = false;
 
-            // Do total check
+            // Do total check.
             numones = 0;
             foreach (bool c in data) { if (c == true) { numones++; } }
-            if ((numones % 2) == 0) { parity[5] = true; } else { parity[5] = false; }
+            if ((numones % 2) == 0)
+				parity[5] = true;
+			else
+				parity[5] = false;
 
-            // Return calculated bits
+            // Return calculated bits.
             return parity;
         }
 
         /// <summary>
-        /// Convert bit array to string representation for debugging purposes
+        /// Convert bit array to string representation for debugging purposes.
         /// </summary>
-        /// <param name="bits">the bits</param>
-        /// <returns>the string</returns>
+        /// <param name="bits">The bits.</param>
+        /// <returns>The string.</returns>
         private string BitsToStringDebug(bool[] bits)
         {
             string ret = "";
 
             foreach(bool bit in bits)
             {
-                if (bit == true) { ret = ret + "1 "; } else { ret = ret + "0 "; }
+                if (bit == true)
+					ret = ret + "1 ";
+				else
+					ret = ret + "0 ";
             }
 
             return ret;

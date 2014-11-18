@@ -32,7 +32,7 @@ namespace HammingTFTP
 
 			if (args.Length == 3)
 			{
-				// Check the file transfer mode; netascii or octet.
+				// Check the option for error or no error.
                 if (args[0].Trim().ToLower().Equals(ERROR))
                     errmode = ErrorCheckMd.error;
                 else if (args[0].Trim().ToLower().Equals(NOERR))
@@ -40,7 +40,7 @@ namespace HammingTFTP
                 else
                     Console.Error.WriteLine(
                         "Usage: [mono] TFTPreader [ error | noerror ] "
-                        + "tftp-host file");
+							+ "tftp-host file");
 
 				// Save the arguments.
 				server = args[1];
@@ -62,8 +62,8 @@ namespace HammingTFTP
 			else
 			{
 				Console.Error.WriteLine(
-					"Usage: [mono] TFTPreader [netascii | octet] "
-					+ "tftp-host file");
+					"Usage: [mono] TFTPreader [ error | noerror ] "
+						+ "tftp-host file");
 			}
 		}
 	}
